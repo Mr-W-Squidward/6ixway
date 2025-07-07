@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "6ixway",
+    "slug": "6ixway",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/6ixway_logo.png",
+    "scheme": "6ixway",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/6ixway_logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/6ixway_logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
