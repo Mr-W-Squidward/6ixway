@@ -71,10 +71,11 @@ export default function addPhotoScreen() {
 
       const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(filename);
 
-      await supabase.from('photos_metadata').insert([{ url: publicUrl, uploaded_at: new Date() }]);
+      router.push({
+        pathname: '/review',
+        params: { uri: publicUrl },
+      })
 
-      Alert.alert('Uploaded!', 'Your photo has been successfully uploaded/saved.')
-      router.back();
     } catch (e: any) {
       console.error(e);
       Alert.alert('Upload failed', e.message);
