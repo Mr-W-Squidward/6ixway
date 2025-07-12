@@ -15,8 +15,8 @@ const dummyReviews = [
 
 export default function review() {
   const router = useRouter();
-  const { uri } = useLocalSearchParams<{ uri: string }>();
-  const photoUri = uri
+  const photoUri = useLocalSearchParams<{ uri: string }>();
+  console.log("Photo URI param received:", photoUri);
   const [rating, setRating] = useState(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -39,7 +39,7 @@ export default function review() {
     try {
       // insert a metadata row
       const { error } = await supabase.from('photos_metadata').insert([{
-        url: photoUri,
+        url: photoUri.uri,
         rating,
         tags: selectedTags,
         status: 'pending',
@@ -47,7 +47,8 @@ export default function review() {
       if (error) throw error;
 
       Alert.alert('Submitted!', 'Your review has been successfully submitted.');
-      router.push('/review');
+      router.back();
+      router.back();
     } catch (e: any) {
       console.error(e);
       Alert.alert('Submission failed', e.message);
@@ -64,8 +65,8 @@ export default function review() {
       </TouchableOpacity>
 
       {/* Photo Preview */}
-      {photoUri ? (
-        <Image source={{ uri: photoUri }} style={styles.photo} />
+      {photoUri?.uri ? (
+        <Image source={{ uri: photoUri.uri }} style={styles.photo} />
       ) : (
         <Text style={{ color: 'white', marginBottom: 16 }}>No photo selected.</Text>
       )}
@@ -89,11 +90,11 @@ export default function review() {
       {/* Tags Section */}
       <Text style={styles.label}>Tags</Text>
       {TAGS.map((tag) => (
-        <TouchableOpacity>
+        <TouchableOpacity key={tag} onPress={() => toggleTag(tag)} style={styles.tagRow}>
           <FontAwesome 
-            key={tag} 
-            style={styles.tagRow}
-            onPress={() => toggleTag(tag)}
+            name={selectedTags.includes(tag) ? 'check-square-o' : 'square-o'}
+            size={24}
+            color="gold"
           />
           <Text style={styles.tagText}>{tag}</Text>
         </TouchableOpacity>

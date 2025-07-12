@@ -1,13 +1,40 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View, Text, useWindowDimensions, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, View, Text, useWindowDimensions, TouchableOpacity, TextInput, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useRef } from 'react';
+import { useFocusEffect } from 'expo-router';
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
+  const bgFade = useRef(new Animated.Value(1)).current;
+  const buttonTranslateY = useRef(new Animated.Value(0)).current;
+
+  useFocusEffect(() => {
+    bgFade.setValue(1);
+    buttonTranslateY.setValue(0);
+});
+
+
+  const handlePress = () => {
+      Animated.parallel([
+        Animated.timing(bgFade, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonTranslateY, {
+          toValue: -200,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        router.push('/catalogue')
+      })
+    };
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={{flex: 1, backgroundColor: 'black', paddingTop: 30, opacity: bgFade}}>
       {/* HERO SECTION */}
       <View style={styles.hero}>
 
@@ -87,25 +114,30 @@ export default function HomeScreen() {
       </View>
 
       {/* 6ixCatalogue */}
-      <TouchableOpacity style={styles.catalogueButton}>
-        <Text style={styles.catalogueButtonText}>▼ 6ixCatalogue</Text>
-      </TouchableOpacity>
-    </View>
+      <Animated.View style={[styles.sixCatalogueButton, { transform: [{ translateY: buttonTranslateY }] }]}>
+        <TouchableOpacity onPress={handlePress}>
+          <Image
+            source={require('../../assets/images/SixCatalogueButton.png')}
+            style={[styles.icon, {width: width * 0.2, height: width * 0.2 }]}
+          />
+        </TouchableOpacity>
+      </Animated.View>
+    </Animated.View>
   );
 }
           
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'black',
-    paddingTop: 30,
-  },
-  
   hero: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
+  },
+
+  sixCatalogueButton: {
+    marginVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   sidebarButton: {

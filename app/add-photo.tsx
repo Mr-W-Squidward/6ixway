@@ -3,8 +3,7 @@ import { View, TouchableOpacity, Text, Image, StyleSheet, Alert, Platform, Touch
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/supabase';
-import { v4 as uuidv4 } from 'uuid';
-import { platform } from 'os';
+import * as FileSystem from 'expo-file-system';
 
 export default function addPhotoScreen() {
   const router = useRouter();
@@ -55,34 +54,48 @@ export default function addPhotoScreen() {
 
   // uploading to SUPABASE
   const confirmAndUpload = async () => {
-    if (!photoUri) {
-      return Alert.alert('No photo selected.', 'Please take/pick a photo.');
-    }
+  if (!photoUri) {
+    return Alert.alert('No photo selected.', 'Please take/pick a photo.');
+  }
 
-    setUploading(true);
-    try {
-      const blob = await (await fetch(photoUri)).blob();
-      const filename = `photos/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
-      const { error: uploadErr } = await supabase.storage.from('photos').upload(filename, blob, {
+  setUploading(true);
+  try {
+    // Fetch local file as blob
+    const response = await fetch(photoUri);
+    const blob = await response.blob();
+    if (!blob) throw new Error("Failed to convert image to blob.");
+
+    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+
+    // Upload to Supabase
+    const { error: uploadErr } = await supabase
+      .storage
+      .from('photos')
+      .upload(filename, blob, {
         contentType: 'image/jpeg',
+        upsert: false,
       });
 
-      if (uploadErr) throw uploadErr;
+    if (uploadErr) throw uploadErr;
 
-      const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(filename);
-
-      router.push({
-        pathname: '/review',
-        params: { uri: publicUrl },
-      })
-
-    } catch (e: any) {
-      console.error(e);
-      Alert.alert('Upload failed', e.message);
-    } finally {
-      setUploading(false);
+    // Get public URL
+    const { data } = supabase.storage.from('photos').getPublicUrl(filename);
+    if (!data?.publicUrl) {
+      throw new Error('Failed to get public URL for uploaded photo.');
     }
-  };
+
+    console.log('Public URL:', data.publicUrl);
+
+    router.push(`/review?uri=${encodeURIComponent(data.publicUrl)}`);
+
+  } catch (e: any) {
+    console.error(e);
+    Alert.alert('Upload failed', e.message);
+  } finally {
+    setUploading(false);
+  }
+};
+
 
   return (
     <View style={styles.container}>
