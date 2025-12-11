@@ -1,10 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image, useWindowDimensions, Animated, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { StyleSheet, View, Text, TouchableOpacity, Image, useWindowDimensions, Animated, FlatList } from 'react-native';
 import * as Location from 'expo-location';
 import haversine from 'haversine-distance';
 import { supabase } from '@/supabase';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 
 export default function TabTwoScreen() {
@@ -31,10 +30,28 @@ export default function TabTwoScreen() {
   const fetchPopularPlaces = async () => {
     const { data, error } = await supabase
       .from('places')
-      .select('*')
-      .order('popularity', { ascending: false })
-      .limit(4);
-      if (!error) setPopularPlaces(data);
+      .select(`
+        id,
+        url,
+        place_id,
+        places (
+        id,
+        name,
+        latitude,
+        longitude,
+        popularity_score,
+        
+      )`)
+      .not('place_id', 'is', null)
+      .order('popularity_score', { ascending: false })
+
+    if (error || !data) {
+      console.error('Error fetching popular places:', error);
+      return;
+    }
+
+    setPopularPlaces(data.slice(0, 4));
+    console.log('Popular places data:', data);
   };
 
   const fetchNearbyPlaces = async () => {
@@ -45,14 +62,14 @@ export default function TabTwoScreen() {
     }
 
     const location = await Location.getCurrentPositionAsync({});
-    const { data: allPlaces } = await supabase.from('places').select('*');
+    const { data: allPlaces, error } = await supabase.from('places').select('*');
 
-    if (!allPlaces) {
+    if (error || !allPlaces) {
       console.error('Failed to fetch places from supabase');
       return;
     }
 
-    const nearby = allPlaces
+    const sortedNearby = allPlaces
       .map(place => ({
         ...place,
         distance: haversine(
@@ -62,9 +79,26 @@ export default function TabTwoScreen() {
       }))
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 4);
-      
-    setNearbyPlaces(nearby);
-  };
+
+    const placesWithPhotos = await Promise.all(
+      sortedNearby.map(async (place) => {
+        const { data: photoData } = await supabase
+        .from('photos_metadata')
+        .select('url')
+        .eq('place_id', place.id)
+        .limit(1)
+        .single();
+
+      return {
+        ...place,
+        url: photoData?.url ?? null
+      };
+    })
+  );
+
+  setNearbyPlaces(placesWithPhotos);
+  console.log('Nearby places data:', placesWithPhotos);
+};
 
   const handleCataloguePress = () => {
     Animated.parallel([
@@ -84,19 +118,49 @@ export default function TabTwoScreen() {
   };
 
   const renderPlaceIcons = (places: any[]) => {
-    return (
-      <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-        {places.map((place) => (
-          <Image 
-            key={place.id}
-            source={{ uri: place.icon_url }}
-            style={{ width: width * 0.2, height: width * 0.2, margin: 5, borderRadius: 10 }}
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' }}>
+      {places.map((place, index) => {
+        if (!place?.url || typeof place.url !== 'string') {
+          console.warn(`Image ${index} missing or invalid URL:`, place.url);
+          return (
+            <View
+              key={place.id || index}
+              style={{
+                width: width * 0.2,
+                height: width * 0.2,
+                margin: 5,
+                borderRadius: 10,
+                backgroundColor: 'red',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ color: 'white', fontSize: 10 }}>No URL</Text>
+            </View>
+          );
+        }
+
+        return (
+          <FlatList
+            data={popularPlaces}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.placeItem} key={item.id}>
+                <Text style={styles.placeName}>{item.name}</Text>
+                <Text style={styles.placeMeta}>
+                  {item.photos_metadata[0]?.count || 0} reviews
+                </Text>
+              </View>
+            )}
           />
-        ))}
-      </View>
-    );
-  }
-  
+        );
+      })}
+    </View>
+  );
+};
+
+
   return (
     <View style={styles.container}>
       {/* HERO SECTION */}
@@ -128,7 +192,7 @@ export default function TabTwoScreen() {
         <TouchableOpacity onPress={handleCataloguePress}>
           <Image
             source={require('../../assets/images/SixCatalogueButton.png')}
-            style={{ width: width * 0.2, height: width * 0.2, resizeMode: 'contain' }}
+            style={{ width: width * 0.2, height: width * 0.2, resizeMode: 'cover' }}
           />
         </TouchableOpacity>
       </Animated.View>

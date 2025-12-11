@@ -15,8 +15,8 @@ const dummyReviews = [
 
 export default function review() {
   const router = useRouter();
-  const photoUri = useLocalSearchParams<{ uri: string }>();
-  console.log("Photo URI param received:", photoUri);
+  const { uri, placeId } = useLocalSearchParams();
+  console.log("Photo URI param received:", uri);
   const [rating, setRating] = useState(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -31,7 +31,7 @@ export default function review() {
   }
 
   const onSubmit = async () => {
-    if (!photoUri) {
+    if (!uri) {
       return Alert.alert('No photo selected.', 'Please take/pick a photo.'); // helkp bro no work!!!
     }
 
@@ -39,16 +39,17 @@ export default function review() {
     try {
       // insert a metadata row
       const { error } = await supabase.from('photos_metadata').insert([{
-        url: photoUri.uri,
+        url: uri,
         rating,
         tags: selectedTags,
         status: 'pending',
     }]);
-      if (error) throw error;
 
+      if (error) throw error;
       Alert.alert('Submitted!', 'Your review has been successfully submitted.');
       router.back();
       router.back();
+
     } catch (e: any) {
       console.error(e);
       Alert.alert('Submission failed', e.message);
@@ -65,12 +66,11 @@ export default function review() {
       </TouchableOpacity>
 
       {/* Photo Preview */}
-      {photoUri?.uri ? (
-        <Image source={{ uri: photoUri.uri }} style={styles.photo} />
+      {typeof uri === 'string' && uri ? (
+        <Image source={{ uri }} style={styles.photo} />
       ) : (
         <Text style={{ color: 'white', marginBottom: 16 }}>No photo selected.</Text>
       )}
-
 
       {/* Rating Section */}
       <Text style={styles.label}>Your Rating</Text>

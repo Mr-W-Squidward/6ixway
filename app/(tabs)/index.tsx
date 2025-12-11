@@ -1,8 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View, Text, useWindowDimensions, TouchableOpacity, TextInput, Animated } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useRef } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();

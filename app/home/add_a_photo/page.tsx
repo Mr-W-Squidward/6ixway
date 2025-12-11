@@ -1,15 +1,47 @@
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Text, Image, StyleSheet, Alert, Platform, Touchable } from 'react-native';
+import { View, TouchableOpacity, Text, Image, StyleSheet, Alert, Platform, Touchable, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/supabase';
 import * as FileSystem from 'expo-file-system';
+import * as Location from 'expo-location';
+
+async function addOrGetPlace(name: string, lat: number, long: number) {
+  const { data: existing, error } = await supabase
+    .from('places')
+    .select('id')
+    .eq('name', name)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking existing place:', error);
+    return null;
+  }
+
+  if (existing) return existing;
+
+  // if not found, insert new place
+
+  const { data: inserted, error: insertError } = await supabase
+    .from('places')
+    .insert([{ name, latitude: lat, longitude: long, popularity_score: 1, created_at: new Date().toISOString() }])
+    .select()
+    .single();
+  
+  if (insertError) { 
+    console.error('Error inserting new place:', insertError);
+    return null;
+  }
+
+  return inserted;
+}
 
 export default function addPhotoScreen() {
   const router = useRouter();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [permStatus, setPermStatus] = useState<'undetermined' | 'granted' | 'denied'>('undetermined');
   const [uploading, setUploading] = useState(false);
+  const [placeName, setPlaceName] = useState('');
 
   // ask for permissions to access the camera and photo library
   useEffect(() => {
@@ -58,35 +90,51 @@ export default function addPhotoScreen() {
     return Alert.alert('No photo selected.', 'Please take/pick a photo.');
   }
 
+  if (!placeName.trim()) {
+    Alert.alert('Place name is required', 'Please enter a name for the place.');
+    return;
+  }
+
   setUploading(true);
   try {
-    // Fetch local file as blob
     const response = await fetch(photoUri);
     const blob = await response.blob();
-    if (!blob) throw new Error("Failed to convert image to blob.");
-
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
 
-    // Upload to Supabase
-    const { error: uploadErr } = await supabase
-      .storage
-      .from('photos')
-      .upload(filename, blob, {
-        contentType: 'image/jpeg',
-        upsert: false,
-      });
+    const location = await Location.getCurrentPositionAsync({});
+    const { latitude, longitude } = location.coords;
 
+    const place = await addOrGetPlace(placeName.trim(), latitude, longitude);
+    if (!place) throw new Error('Failed to find or insert place');
+    const placeId = place.id;
+
+    // Upload photo to Supabase storage
+    const { error: uploadErr } = await supabase.storage.from('photos').upload(filename, blob, {
+      contentType: 'image/jpeg',
+      upsert: false,
+    });
     if (uploadErr) throw uploadErr;
 
-    // Get public URL
     const { data } = supabase.storage.from('photos').getPublicUrl(filename);
-    if (!data?.publicUrl) {
-      throw new Error('Failed to get public URL for uploaded photo.');
-    }
+    const photoUrl = data?.publicUrl;
+    if (!photoUrl) throw new Error('Could not get public photo URL.');
 
-    console.log('Public URL:', data.publicUrl);
+    // Insert metadata to photos_metadata
+    const { error: insertErr } = await supabase.from('photos_metadata').insert([
+      {
+        url: photoUrl,
+        place_id: Number(placeId),
+        rating: 4, // user can edit
+        tags: ['Park'], // default for now;
+        status: 'pending',
+        uploaded_at: new Date()
+      },
+    ]);
+    if (insertErr) throw insertErr;
 
-    router.push(`/review?uri=${encodeURIComponent(data.publicUrl)}`);
+    // Done! Navigate back or show success
+    Alert.alert('Upload complete!');
+    router.push(`/review?uri=${encodeURIComponent(photoUrl)}&placeId=${placeId}`);
 
   } catch (e: any) {
     console.error(e);
@@ -109,6 +157,15 @@ export default function addPhotoScreen() {
       <View style={{ width: 60 }} />
 
       {/* Preview or Buttons */}
+      <Text style={styles.text}>Name this Place</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="e.g. Scarborough Bluffs"
+        placeholderTextColor="#888"
+        value={placeName}
+        onChangeText={setPlaceName}
+      />
+
       <View style={styles.previewContainer}>
         {photoUri ? (
           <Image source={{ uri: photoUri }} style={styles.previewImage} />
@@ -174,6 +231,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  input: {
+    backgroundColor: '#1a1a1a',
+    color: 'white',
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 10,
   },
 
   previewImage: {
