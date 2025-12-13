@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View, Text, useWindowDimensions, TouchableOpacity, TextInput, Animated } from 'react-native';
-import { useRef } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useRef } from 'react';
+import { Animated, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
@@ -15,22 +15,22 @@ export default function HomeScreen() {
 });
 
 
-  const handlePress = () => {
-      Animated.parallel([
-        Animated.timing(bgFade, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(buttonTranslateY, {
-          toValue: -200,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        router.push('/catalogue')
-      })
-    };
+  // const handlePress = () => {
+  //     Animated.parallel([
+  //       Animated.timing(bgFade, {
+  //         toValue: 0,
+  //         duration: 400,
+  //         useNativeDriver: true,
+  //       }),
+  //       Animated.timing(buttonTranslateY, {
+  //         toValue: -200,
+  //         duration: 400,
+  //         useNativeDriver: true,
+  //       }),
+  //     ]).start(() => {
+  //       router.push('/catalogue')
+  //     })
+  //   };
 
   return (
     <Animated.View style={{flex: 1, backgroundColor: 'black', paddingTop: 30, opacity: bgFade}}>
@@ -39,19 +39,19 @@ export default function HomeScreen() {
 
         <TouchableOpacity onPress={() => console.log("SIDEBAR BTN PRESSED")} style={styles.sidebarButton}> {/* SIDEBAR BUTTON */}
           <Image
-            source={require('../../assets/images/sidebar_icon.png')} 
+            source={require('../../../assets/images/sidebar_icon.png')} 
             style={[styles.icon, { width: width * 0.08, height: width * 0.08 }]}
           />
         </TouchableOpacity>
 
         <Image
-          source={require('../../assets/images/6ixway_logo.png')} 
+          source={require('../../../assets/images/6ixway_logo.png')} 
           style={[styles.logo, { width: width * 0.3, height: width * 0.3 }]}
         /> {/* LOGO */}
 
         <TouchableOpacity onPress={() => console.log("SETTINGS BTN PRESSED")} style={styles.settingsButton}> {/* SETTINGS BUTTON */}
           <Image
-            source={require('../../assets/images/settings_icon.png')} 
+            source={require('../../../assets/images/settings_icon.png')} 
             style={[styles.icon, { width: width * 0.08, height: width * 0.08 }]}
           />
         </TouchableOpacity>
@@ -61,7 +61,7 @@ export default function HomeScreen() {
       <View style={styles.searchContainer}>
         <View style={styles.searchWrapper}>
           <Image 
-            source={require('../../assets/images/searchIcon.png')}
+            source={require('../../../assets/images/searchIcon.png')}
             style={styles.searchIcon}
           />
           <TextInput
@@ -75,19 +75,19 @@ export default function HomeScreen() {
       {/* GRID OF BUTTONS */}
       <View style={styles.grid}> 
 
-        {/* Add A Photo */}
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/add-photo')}>
+        {/* Add A Photo
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/home/add_a_photo')}>
           <Image
-            source={require('../../assets/images/AddPhoto.png')}
+            source={require('../../../assets/images/AddPhoto.png')}
             style={[styles.buttonImage, { width: width * 0.2, height: width * 0.2}]}
           />
           <Text style={styles.buttonText}>Add A Photo</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* 6ixMaps */}
         <TouchableOpacity style={styles.button}>
           <Image
-            source={require('../../assets/images/6ixMaps.png')}
+            source={require('../../../assets/images/6ixMaps.png')}
             style={[styles.buttonImage, { width: width * 0.2, height: width * 0.2}]}
           />
           <Text style={styles.buttonText}>6ixMaps</Text>
@@ -96,7 +96,7 @@ export default function HomeScreen() {
         {/* Friends */}
         <TouchableOpacity style={styles.button}>
           <Image
-            source={require('../../assets/images/Friends.png')}
+            source={require('../../../assets/images/Friends.png')}
             style={[styles.buttonImage, { width: width * 0.2, height: width * 0.2}]}
           />
           <Text style={styles.buttonText}>Friends</Text>
@@ -105,18 +105,19 @@ export default function HomeScreen() {
         {/* Group Travel */}
         <TouchableOpacity style={styles.button}>
           <Image
-            source={require('../../assets/images/GroupTravel.png')}
+            source={require('../../../assets/images/GroupTravel.png')}
             style={[styles.buttonImage, { width: width * 0.2, height: width * 0.2}]}
           />
           <Text style={styles.buttonText}>Group Travel</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 6ixCatalogue */}
+        {/* 6ixCatalogue */}
       <Animated.View style={[styles.sixCatalogueButton, { transform: [{ translateY: buttonTranslateY }] }]}>
-        <TouchableOpacity onPress={handlePress}>
+        {/* <TouchableOpacity onPress={handlePress}</Animated.View>> */}
+        <TouchableOpacity onPress={() => router.push('/catalogue')}>
           <Image
-            source={require('../../assets/images/SixCatalogueButton.png')}
+            source={require('../../../assets/images/SixCatalogueButton.png')}
             style={[styles.icon, {width: width * 0.2, height: width * 0.2 }]}
           />
         </TouchableOpacity>

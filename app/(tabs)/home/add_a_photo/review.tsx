@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, Text, Image, StyleSheet, Alert, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import { supabase } from '@/supabase';
+// use backend /reviews endpoint instead of supabase client
 import { useLocalSearchParams } from 'expo-router';
 
 const dummyReviews = [
@@ -32,24 +32,21 @@ export default function review() {
 
   const onSubmit = async () => {
     if (!uri) {
-      return Alert.alert('No photo selected.', 'Please take/pick a photo.'); // helkp bro no work!!!
+      return Alert.alert('No photo selected.', 'Please take/pick a photo.'); 
     }
 
     setSubmitting(true);
     try {
-      // insert a metadata row
-      const { error } = await supabase.from('photos_metadata').insert([{
-        url: uri,
-        rating,
-        tags: selectedTags,
-        status: 'pending',
-    }]);
-
-      if (error) throw error;
+      const res = await fetch('http://localhost:3000/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uri, rating, tags: selectedTags, placeId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Submission failed');
       Alert.alert('Submitted!', 'Your review has been successfully submitted.');
       router.back();
       router.back();
-
     } catch (e: any) {
       console.error(e);
       Alert.alert('Submission failed', e.message);

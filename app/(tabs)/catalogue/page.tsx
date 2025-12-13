@@ -1,8 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image, useWindowDimensions, Animated, FlatList } from 'react-native';
 import * as Location from 'expo-location';
-import haversine from 'haversine-distance';
-import { supabase } from '@/supabase';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 
@@ -28,30 +26,13 @@ export default function TabTwoScreen() {
   }, []);
 
   const fetchPopularPlaces = async () => {
-    const { data, error } = await supabase
-      .from('places')
-      .select(`
-        id,
-        url,
-        place_id,
-        places (
-        id,
-        name,
-        latitude,
-        longitude,
-        popularity_score,
-        
-      )`)
-      .not('place_id', 'is', null)
-      .order('popularity_score', { ascending: false })
-
-    if (error || !data) {
-      console.error('Error fetching popular places:', error);
-      return;
+    try {
+      const res = await fetch('http://localhost:3000/places?mode=popular');
+      const json = await res.json();
+      setPopularPlaces((json.places || []).slice(0, 4));
+    } catch (e) {
+      console.error('Error fetching popular places:', e);
     }
-
-    setPopularPlaces(data.slice(0, 4));
-    console.log('Popular places data:', data);
   };
 
   const fetchNearbyPlaces = async () => {
@@ -62,42 +43,13 @@ export default function TabTwoScreen() {
     }
 
     const location = await Location.getCurrentPositionAsync({});
-    const { data: allPlaces, error } = await supabase.from('places').select('*');
-
-    if (error || !allPlaces) {
-      console.error('Failed to fetch places from supabase');
-      return;
+    try {
+      const res = await fetch(`http://localhost:3000/places?mode=nearby&lat=${location.coords.latitude}&lon=${location.coords.longitude}`);
+      const json = await res.json();
+      setNearbyPlaces((json.places || []).slice(0, 4));
+    } catch (e) {
+      console.error('Failed to fetch nearby places:', e);
     }
-
-    const sortedNearby = allPlaces
-      .map(place => ({
-        ...place,
-        distance: haversine(
-          { latitude: location.coords.latitude, longitude: location.coords.longitude },
-          { latitude: place.latitude, longitude: place.longitude }
-        )
-      }))
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 4);
-
-    const placesWithPhotos = await Promise.all(
-      sortedNearby.map(async (place) => {
-        const { data: photoData } = await supabase
-        .from('photos_metadata')
-        .select('url')
-        .eq('place_id', place.id)
-        .limit(1)
-        .single();
-
-      return {
-        ...place,
-        url: photoData?.url ?? null
-      };
-    })
-  );
-
-  setNearbyPlaces(placesWithPhotos);
-  console.log('Nearby places data:', placesWithPhotos);
 };
 
   const handleCataloguePress = () => {
@@ -168,19 +120,19 @@ export default function TabTwoScreen() {
 
         <TouchableOpacity onPress={() => console.log("SIDEBAR BTN PRESSED")} style={styles.sidebarButton}> {/* SIDEBAR BUTTON */}
           <Image
-            source={require('../../assets/images/sidebar_icon.png')} 
+            source={require('../../../assets/images/sidebar_icon.png')} 
             style={[styles.icon, { width: width * 0.08, height: width * 0.08 }]}
           />
         </TouchableOpacity>
 
         <Image
-          source={require('../../assets/images/6ixway_logo.png')} 
+          source={require('../../../assets/images/6ixway_logo.png')} 
           style={[styles.logo, { width: width * 0.3, height: width * 0.3 }]}
         /> {/* LOGO */}
 
         <TouchableOpacity onPress={() => console.log("SETTINGS BTN PRESSED")} style={styles.settingsButton}> {/* SETTINGS BUTTON */}
           <Image
-            source={require('../../assets/images/settings_icon.png')} 
+            source={require('../../../assets/images/settings_icon.png')} 
             style={[styles.icon, { width: width * 0.08, height: width * 0.08 }]}
           />
         </TouchableOpacity>
@@ -191,7 +143,7 @@ export default function TabTwoScreen() {
       <Animated.View style={[styles.sixCatalogueButton, { transform: [{ translateY: buttonTranslateY }] }]}>
         <TouchableOpacity onPress={handleCataloguePress}>
           <Image
-            source={require('../../assets/images/SixCatalogueButton.png')}
+            source={require('../../../assets/images/SixCatalogueButton.png')}
             style={{ width: width * 0.2, height: width * 0.2, resizeMode: 'cover' }}
           />
         </TouchableOpacity>

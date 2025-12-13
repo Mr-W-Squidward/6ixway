@@ -2,39 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, Text, Image, StyleSheet, Alert, Platform, Touchable, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { supabase } from '@/supabase';
 import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
 
-async function addOrGetPlace(name: string, lat: number, long: number) {
-  const { data: existing, error } = await supabase
-    .from('places')
-    .select('id')
-    .eq('name', name)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error checking existing place:', error);
-    return null;
-  }
-
-  if (existing) return existing;
-
-  // if not found, insert new place
-
-  const { data: inserted, error: insertError } = await supabase
-    .from('places')
-    .insert([{ name, latitude: lat, longitude: long, popularity_score: 1, created_at: new Date().toISOString() }])
-    .select()
-    .single();
-  
-  if (insertError) { 
-    console.error('Error inserting new place:', insertError);
-    return null;
-  }
-
-  return inserted;
-}
+// place creation / lookup handled by backend /photos endpoint
 
 export default function addPhotoScreen() {
   const router = useRouter();
@@ -96,45 +67,32 @@ export default function addPhotoScreen() {
   }
 
   setUploading(true);
-  try {
+    try {
+    // send photo + metadata to backend for Supabase operations
     const response = await fetch(photoUri);
     const blob = await response.blob();
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+    const fileExt = '.jpg';
+    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}${fileExt}`;
 
     const location = await Location.getCurrentPositionAsync({});
     const { latitude, longitude } = location.coords;
 
-    const place = await addOrGetPlace(placeName.trim(), latitude, longitude);
-    if (!place) throw new Error('Failed to find or insert place');
-    const placeId = place.id;
+    const form = new FormData();
+    // @ts-ignore - React Native FormData file
+    form.append('photo', { uri: photoUri, name: filename, type: 'image/jpeg' } as any);
+    form.append('placeName', placeName.trim());
+    if (latitude) form.append('latitude', String(latitude));
+    if (longitude) form.append('longitude', String(longitude));
+    form.append('rating', String(4));
+    form.append('tags', JSON.stringify(['Park']));
 
-    // Upload photo to Supabase storage
-    const { error: uploadErr } = await supabase.storage.from('photos').upload(filename, blob, {
-      contentType: 'image/jpeg',
-      upsert: false,
-    });
-    if (uploadErr) throw uploadErr;
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const res = await fetch(`${backendUrl}/photos`, { method: 'POST', body: form });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Upload failed');
 
-    const { data } = supabase.storage.from('photos').getPublicUrl(filename);
-    const photoUrl = data?.publicUrl;
-    if (!photoUrl) throw new Error('Could not get public photo URL.');
-
-    // Insert metadata to photos_metadata
-    const { error: insertErr } = await supabase.from('photos_metadata').insert([
-      {
-        url: photoUrl,
-        place_id: Number(placeId),
-        rating: 4, // user can edit
-        tags: ['Park'], // default for now;
-        status: 'pending',
-        uploaded_at: new Date()
-      },
-    ]);
-    if (insertErr) throw insertErr;
-
-    // Done! Navigate back or show success
     Alert.alert('Upload complete!');
-    router.push(`/review?uri=${encodeURIComponent(photoUrl)}&placeId=${placeId}`);
+    router.push(`/home/add_a_photo/review?uri=${encodeURIComponent(json.photoUrl)}&placeId=${json.placeId}`);
 
   } catch (e: any) {
     console.error(e);
