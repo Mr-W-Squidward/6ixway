@@ -14,24 +14,6 @@ export default function HomeScreen() {
     buttonTranslateY.setValue(0);
 });
 
-
-  // const handlePress = () => {
-  //     Animated.parallel([
-  //       Animated.timing(bgFade, {
-  //         toValue: 0,
-  //         duration: 400,
-  //         useNativeDriver: true,
-  //       }),
-  //       Animated.timing(buttonTranslateY, {
-  //         toValue: -200,
-  //         duration: 400,
-  //         useNativeDriver: true,
-  //       }),
-  //     ]).start(() => {
-  //       router.push('/catalogue')
-  //     })
-  //   };
-
   return (
     <Animated.View style={{flex: 1, backgroundColor: 'black', paddingTop: 30, opacity: bgFade}}>
       {/* HERO SECTION */}
@@ -74,48 +56,53 @@ export default function HomeScreen() {
 
       {/* GRID OF BUTTONS */}
       <View style={styles.grid}> 
-
-        {/* Add A Photo
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/home/add_a_photo')}>
-          <Image
-            source={require('../../../assets/images/AddPhoto.png')}
-            style={[styles.buttonImage, { width: width * 0.2, height: width * 0.2}]}
-          />
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/home/add_a_photo/page')}>
+          <View style={[styles.circle, { width: width * 0.22, height: width * 0.22, borderRadius: (width * 0.22) / 2 }]}> 
+            <Image
+              source={require('../../../assets/images/AddPhoto.png')}
+              style={styles.iconInside}
+            />
+          </View>
           <Text style={styles.buttonText}>Add A Photo</Text>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
 
         {/* 6ixMaps */}
         <TouchableOpacity style={styles.button}>
-          <Image
-            source={require('../../../assets/images/6ixMaps.png')}
-            style={[styles.buttonImage, { width: width * 0.2, height: width * 0.2}]}
-          />
+          <View style={[styles.circle, { width: width * 0.22, height: width * 0.22, borderRadius: (width * 0.22) / 2 }]}> 
+            <Image
+              source={require('../../../assets/images/6ixMaps.png')}
+              style={styles.iconInside}
+            />
+          </View>
           <Text style={styles.buttonText}>6ixMaps</Text>
         </TouchableOpacity>
 
         {/* Friends */}
         <TouchableOpacity style={styles.button}>
-          <Image
-            source={require('../../../assets/images/Friends.png')}
-            style={[styles.buttonImage, { width: width * 0.2, height: width * 0.2}]}
-          />
+          <View style={[styles.circle, { width: width * 0.22, height: width * 0.22, borderRadius: (width * 0.22) / 2 }]}> 
+            <Image
+              source={require('../../../assets/images/Friends.png')}
+              style={styles.iconInside}
+            />
+          </View>
           <Text style={styles.buttonText}>Friends</Text>
         </TouchableOpacity>
 
         {/* Group Travel */}
         <TouchableOpacity style={styles.button}>
-          <Image
-            source={require('../../../assets/images/GroupTravel.png')}
-            style={[styles.buttonImage, { width: width * 0.2, height: width * 0.2}]}
-          />
+          <View style={[styles.circle, { width: width * 0.22, height: width * 0.22, borderRadius: (width * 0.22) / 2 }]}> 
+            <Image
+              source={require('../../../assets/images/GroupTravel.png')}
+              style={styles.iconInside}
+            />
+          </View>
           <Text style={styles.buttonText}>Group Travel</Text>
         </TouchableOpacity>
       </View>
 
         {/* 6ixCatalogue */}
       <Animated.View style={[styles.sixCatalogueButton, { transform: [{ translateY: buttonTranslateY }] }]}>
-        {/* <TouchableOpacity onPress={handlePress}</Animated.View>> */}
-        <TouchableOpacity onPress={() => router.push('/catalogue')}>
+        <TouchableOpacity onPress={() => router.push('/catalogue/page')}>
           <Image
             source={require('../../../assets/images/SixCatalogueButton.png')}
             style={[styles.icon, {width: width * 0.2, height: width * 0.2 }]}
@@ -187,17 +174,31 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: 10,
+    justifyContent: 'space-between',
+    alignSelf: 'center',
+    width: '90%',
+    marginTop: 22,
   },
 
   button: {
-    width: '42%',
+    width: '45%',
     alignItems: 'center',
-    margin: 15,
+    marginVertical: 12,
   },
 
   buttonImage: {
+    resizeMode: 'contain',
+  },
+
+  circle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1a1a1a',
+  },
+
+  iconInside: {
+    width: '60%',
+    height: '60%',
     resizeMode: 'contain',
   },
 

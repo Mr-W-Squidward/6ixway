@@ -4,8 +4,8 @@ export default function HomeLayout() {
 
   return (
     <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="add_a_photo" options={{ title: 'Add Photo' }} />
+      <Stack.Screen name="page" options={{ headerShown: false }} />
+      <Stack.Screen name="add_a_photo/page" options={{ title: 'Add Photo' }} />
       <Stack.Screen name="add_a_photo/review" options={{ title: 'Review' }}/>
     </Stack>
   )

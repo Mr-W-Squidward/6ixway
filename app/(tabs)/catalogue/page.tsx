@@ -53,20 +53,7 @@ export default function TabTwoScreen() {
 };
 
   const handleCataloguePress = () => {
-    Animated.parallel([
-      Animated.timing(bgFadeIn, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonTranslateY, {
-        toValue: 200,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      router.push('/')
-    })
+    router.push('/home')
   };
 
   const renderPlaceIcons = (places: any[]) => {
@@ -144,7 +131,7 @@ export default function TabTwoScreen() {
         <TouchableOpacity onPress={handleCataloguePress}>
           <Image
             source={require('../../../assets/images/SixCatalogueButton.png')}
-            style={{ width: width * 0.2, height: width * 0.2, resizeMode: 'cover' }}
+            style={{ width: width * 0.2, height: width * 0.2, resizeMode: 'contain' }}
           />
         </TouchableOpacity>
       </Animated.View>
